@@ -30,10 +30,11 @@ contract Splitter {
 	    require(msg.value > 0 && paused == false);
 	    if( msg.sender != alice){
 	    	msg.sender.transfer(msg.value);
-	    	return false;
+	    	revert();
 	    }
-	    bobsFunds = msg.value/2;
-	    carolsFunds = msg.value/2;
+	    uint r = msg.value % 2;
+	    bobsFunds = msg.value / 2;
+	    carolsFunds = msg.value / 2;
 	    return true;
 
 	}
@@ -43,22 +44,29 @@ contract Splitter {
 	returns(bool success){
 		require(paused == false);
 		if(msg.sender == bob && bobsFunds > 0){
-			bob.transfer(bobsFunds);
 			bobsFunds = 0;
+			msg.sender.transfer(bobsFunds);
 		}
 		if(msg.sender == carol && carolsFunds > 0){
-			carol.transfer(carolsFunds);
 			carolsFunds = 0;
+			msg.sender.transfer(carolsFunds);
 		}
 	    return true;
 	}
 
-	function pause()
+	function stop()
 	public
 	returns(bool success){
 		require(msg.sender == owner);
-		if(paused == true){ paused = false;}
-		else{paused = true;}
+		paused = true;
+		return true;
+	}
+
+	function run()
+	public
+	returns(bool success){
+		require(msg.sender == owner);
+		paused = false;
 		return true;
 	}
 	
