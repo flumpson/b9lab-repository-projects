@@ -5,36 +5,25 @@ pragma solidity ^0.4.4;
 
 contract Splitter {
 
-	address public bob;
-	address public alice;
-	address public carol;
 	address public owner;
-	uint public bobsFunds;
-	uint public carolsFunds;
 	bool private paused;
+	mapping(address=>uint) public balances; 
 
 
-	function Splitter(address _bob, address _alice, address _carol) {
-		require(_bob != 0 && _alice != 0 && _carol != 0);
-		bob = _bob;
-		alice = _alice;
-		carol = _carol;
+	function Splitter() {
 		owner = msg.sender;
 		paused = false;
 	}
 	
-	function receive() 
+	function receive( address _alice, address _bob, address _carol) 
 	public
 	payable 
 	returns(bool success){
-	    require(msg.value > 0 && paused == false);
-	    if( msg.sender != alice){
-	    	msg.sender.transfer(msg.value);
-	    	revert();
-	    }
+		require((_bob != 0 && _alice != 0 && _carol != 0) && (msg.value > 0 && paused == false));
 	    uint r = msg.value % 2;
-	    bobsFunds = msg.value / 2;
-	    carolsFunds = msg.value / 2;
+	    balances[_bob] = msg.value / 2;
+	    balances[_carol] = msg.value / 2;
+	    msg.sender.transfer(r);
 	    return true;
 
 	}
@@ -42,15 +31,10 @@ contract Splitter {
 	function withdraw() 
 	public 
 	returns(bool success){
-		require(paused == false);
-		if(msg.sender == bob && bobsFunds > 0){
-			bobsFunds = 0;
-			msg.sender.transfer(bobsFunds);
-		}
-		if(msg.sender == carol && carolsFunds > 0){
-			carolsFunds = 0;
-			msg.sender.transfer(carolsFunds);
-		}
+		require((paused == false) && (balances[msg.sender] != 0));
+		uint funds = balances[msg.sender];
+		balances[msg.sender] = 0;
+		msg.sender.transfer(funds);
 	    return true;
 	}
 
