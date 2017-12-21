@@ -8,7 +8,7 @@ contract Splitter {
 	address private owner;
 	bool private paused;
 	mapping(address=>uint) public balances; 
-	event RecievedValue(uint value, address recipient);
+	event RecievedValue(uint value, address sender, address recipient1, address recipient2);
 	event WithdrewValue(uint value, address recipient);
 	event IsContractStopped(bool paused);
 
@@ -18,7 +18,7 @@ contract Splitter {
 	}
 
 
-	function Splitter() {
+	function Splitter public () {
 		owner = msg.sender;
 	}
 	
@@ -34,9 +34,8 @@ contract Splitter {
 	    uint value = msg.value / 2;
 	    balances[recipient1] = value;
 	    balances[recipient2] = value;
+	   	RecievedValue(value, msg.sender, recipient1, recipient2);
 	    msg.sender.transfer(r);
-	    RecievedValue(value, recipient1);
-	    RecievedValue(value, recipient2);
 	    return true;
 
 	}
@@ -49,8 +48,8 @@ contract Splitter {
 		require(balances[msg.sender] != 0);
 		uint funds = balances[msg.sender];
 		balances[msg.sender] = 0;
-		msg.sender.transfer(funds);
 		WithdrewValue(funds, msg.sender);
+		msg.sender.transfer(funds);
 	    return true;
 	}
 
