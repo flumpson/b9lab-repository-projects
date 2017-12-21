@@ -5,66 +5,87 @@ pragma solidity ^0.4.4;
 
 contract Splitter {
 
-	address public owner;
+	address private owner;
 	bool private paused;
 	mapping(address=>uint) public balances; 
-	event recievedValue(uint value, address recipient);
-	event withdrewValue(uint value, address recipient);
-	event isContractStopped(bool paused);
+	event RecievedValue(uint value, address recipient);
+	event WithdrewValue(uint value, address recipient);
+	event IsContractStopped(bool paused);
+
+	modifier onlyIfRunning {
+  		require(!paused);
+  		_;
+	}
 
 
 	function Splitter() {
 		owner = msg.sender;
 	}
 	
-	function receive( address sender, address recipient1, address recipient2) 
+	function receive (address recipient1, address recipient2) 
 	public
 	payable 
+	onlyIfRunning
 	returns(bool success){
-		require(sender != 0);
 		require(recipient1 != 0);
 		require(recipient2 != 0);
 		require(msg.value > 0);
-		require(!paused);
 	    uint r = msg.value % 2;
 	    uint value = msg.value / 2;
 	    balances[recipient1] = value;
 	    balances[recipient2] = value;
 	    msg.sender.transfer(r);
-	    recievedValue(value, recipient1);
-	    recievedValue(value, recipient2);
+	    RecievedValue(value, recipient1);
+	    RecievedValue(value, recipient2);
 	    return true;
 
 	}
 
 	function withdraw() 
 	public 
+	onlyIfRunning
 	returns(bool success){
 		require(!paused);
 		require(balances[msg.sender] != 0);
 		uint funds = balances[msg.sender];
 		balances[msg.sender] = 0;
 		msg.sender.transfer(funds);
-		withdrewValue(funds, msg.sender);
+		WithdrewValue(funds, msg.sender);
 	    return true;
 	}
 
 	function stop()
 	public
+	onlyIfRunning
 	returns(bool success){
 		require(msg.sender == owner);
 		paused = true;
-		isContractStopped(paused);
+		IsContractStopped(paused);
 		return true;
 	}
 
 	function run()
 	public
+	onlyIfRunning
 	returns(bool success){
 		require(msg.sender == owner);
 		paused = false;
-		isContractStopped(paused);
+		IsContractStopped(paused);
 		return true;
+	}
+
+	function getOwner()
+	public 
+	view 
+	returns(address theOwner) {
+  		return owner;
+	}
+
+	function isPaused()
+	public 
+	view 
+	returns(bool state) {
+  		return paused;
 	}
 	
 }
