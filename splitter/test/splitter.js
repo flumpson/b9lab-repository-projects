@@ -21,9 +21,9 @@ contract('Splitter', function(accounts) {
   it(`should call stop, then check if pause is true`, function() {
     return Splitter.deployed().then(_instance => {
       instance = _instance;
-      return instance.stop.call( {from: owner });
+      return instance.stop.sendTransaction( {from: owner });
     }).then(paused => {
-      return instance.paused.call({ from: accounts[0] });
+      return instance.isPaused.call({ from: accounts[0] });
     }).then(paused => {
       assert.equal(true, paused, "call to stop was unsuccesful")
     });
@@ -49,6 +49,6 @@ contract('Splitter', function(accounts) {
   //   })
   // });
 });
-
-Splitter.deployed().then(instance => instance.stop.call({from:account0}))
-Splitter.deployed().then(instance => instance.isPaused.call({from:account0}))
+// web3.eth.getAccounts((err, accounts) => account0 = accounts[0])
+// Splitter.deployed().then(instance => instance.stop.call({from:account0}))
+// Splitter.deployed().then(instance => instance.isPaused.call({from:account0}))

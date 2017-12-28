@@ -18,7 +18,7 @@ contract Splitter {
 	}
 
 
-	function Splitter public () {
+	function Splitter () {
 		owner = msg.sender;
 	}
 	
@@ -74,14 +74,14 @@ contract Splitter {
 
 	function getOwner()
 	public 
-	view 
+	constant 
 	returns(address theOwner) {
   		return owner;
 	}
 
 	function isPaused()
 	public 
-	view 
+	constant 
 	returns(bool state) {
   		return paused;
 	}
