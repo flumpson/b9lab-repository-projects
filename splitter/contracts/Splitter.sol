@@ -65,7 +65,6 @@ contract Splitter {
 
 	function run()
 	public
-	onlyIfRunning
 	returns(bool success){
 		require(msg.sender == owner);
 		paused = false;
