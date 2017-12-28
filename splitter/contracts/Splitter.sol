@@ -34,7 +34,7 @@ contract Splitter {
 	    uint value = msg.value / 2;
 	    balances[recipient1] = value;
 	    balances[recipient2] = value;
-	   	RecievedValue(value, msg.sender, recipient1, recipient2);
+	   	RecievedValue(msg.value, msg.sender, recipient1, recipient2);
 	    msg.sender.transfer(r);
 	    return true;
 

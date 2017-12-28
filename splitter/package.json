@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "ethereumjs-testrpc": "^6.0.3"
   }
 }
