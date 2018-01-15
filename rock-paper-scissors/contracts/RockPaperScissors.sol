@@ -21,19 +21,23 @@ matchmaking is the hard part.
   */
 	  address private owner;
 	  bool private paused;
-	  mapping(address=>ActionChoices) choices; 
-	  mapping(address=>uint) balances; 
-	  enum ActionChoices { Rock, Paper, Scissors }
+	  uint curID;
+	  enum ActionChoices { Rock, Paper, Scissors, None }
 	  event IsContractStopped(bool paused);
 
 
 	  struct Game {
-	  	uint numPlayers;
+	  	uint id;
+	  	uint wager1;
+	  	uint wager2;
 	  	address player1;
 	  	address player2;
+	  	ActionChoices choice1;
+	  	ActionChoices choice2;
+
 	  }
 
-  	Game[] public games;
+  	mapping(uint=>Game) public games; 
 
   	modifier onlyIfRunning {
   		require(!paused);
@@ -42,6 +46,7 @@ matchmaking is the hard part.
 
 	function RockPaperScissors () {
 		owner = msg.sender;
+		curID = 1;
 	}
 
 	function createGame()
@@ -51,10 +56,35 @@ matchmaking is the hard part.
 	returns(bool success)
 	{
 		require(msg.value >= 1 ether);
-		Game newGame = Game(1,msg.sender,0);
+		Game memory newGame = Game(curID,msg.value,0,msg.sender,0,ActionChoices.None,ActionChoices.None);
+		games[curID] = newGame;
+		curID+=1;
+		return true;
+	}
 
+	function joinGame(uint id)
+	public
+	payable
+	onlyIfRunning
+	returns(bool success)
+	{
+		// check to see if these assignments persist
+		require(msg.value >= 1 ether);
+		Game storage desiredGame = games[id];
+		require(desiredGame.id != 0 && desiredGame.wager1 != 0 && desiredGame.player1 != 0 && desiredGame.player1 != msg.sender);
+		desiredGame.player2 = msg.sender;
+		desiredGame.wager2 = msg.value;
+		return true;
+	}
 
-
+	function sendChoice(uint id)
+	public
+	onlyIfRunning
+	returns(bool success)
+	{
+		// require()
+		Game memory desiredGame = games[id];
+		return true;
 	}
 
 
