@@ -33,6 +33,7 @@ matchmaking is the hard part.
 	  	uint id;
 	  	uint numPlayers;
 	  	uint playersReady;
+	  	bool finished;
 	  }
 
   	mapping(uint=>Game) public games; 
@@ -54,7 +55,7 @@ matchmaking is the hard part.
 	returns(bool success)
 	{
 		require(msg.value == 1 ether);
-		Game memory newGame = Game(curID,1,0);
+		Game memory newGame = Game(curID,1,0,false);
 		games[curID] = newGame;
 		wagers[msg.sender] = msg.value;
 		players[msg.sender] = curID;
@@ -71,7 +72,7 @@ matchmaking is the hard part.
 		// check to see if these assignments persist
 		require(msg.value == 1 ether);
 		Game storage desiredGame = games[id];
-		require(desiredGame.id != 0 && desiredGame.numPlayers == 1 && desiredGame.playersReady == 0);
+		require(desiredGame.id != 0 && desiredGame.numPlayers == 1 && desiredGame.playersReady == 0 && desiredGame.finished == false);
 		desiredGame.numPlayers+=1;
 		players[msg.sender] = id;
 		wagers[msg.sender] = msg.value;
@@ -85,7 +86,7 @@ matchmaking is the hard part.
 	{
 		uint id = players[msg.sender];
 		Game storage desiredGame = games[id];
-		require(desiredGame.id != 0 && desiredGame.numPlayers == 2);
+		require(desiredGame.id != 0 && desiredGame.numPlayers == 2 && desiredGame.finished == false);
 		require(players[msg.sender] == id);
 		require(wagers[msg.sender] >= 1 ether);
 		require(choices[msg.sender] == ActionChoices.None);
@@ -96,7 +97,17 @@ matchmaking is the hard part.
 		return true;
 	}
 
-	// function checkWinner()
+	function declareWinner()
+	public
+	onlyIfRunning
+	returns(address winner)
+	{
+		uint id = players[msg.sender];
+		require(id > 0);
+		Game memory desiredGame = games[id];
+		require(desiredGame.id != 0 && desiredGame.numPlayers == 2 && desiredGame.finished == false && desiredGame.playersReady == 2);
+
+	}
 
 
 
