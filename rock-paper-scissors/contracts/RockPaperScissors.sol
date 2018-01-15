@@ -21,20 +21,18 @@ matchmaking is the hard part.
   */
 	  address private owner;
 	  bool private paused;
-	  uint curID;
-	  enum ActionChoices { Rock, Paper, Scissors, None }
+	  uint private curID;
+	  enum ActionChoices { None, Rock, Paper, Scissors }
 	  event IsContractStopped(bool paused);
+	  mapping(address=>uint) private wagers;
+	  mapping(address=>uint) private players;
+	  mapping(address=>ActionChoices) private choices;
 
 
 	  struct Game {
 	  	uint id;
-	  	uint wager1;
-	  	uint wager2;
-	  	address player1;
-	  	address player2;
-	  	ActionChoices choice1;
-	  	ActionChoices choice2;
-
+	  	uint numPlayers;
+	  	uint playersReady;
 	  }
 
   	mapping(uint=>Game) public games; 
@@ -55,9 +53,11 @@ matchmaking is the hard part.
 	onlyIfRunning
 	returns(bool success)
 	{
-		require(msg.value >= 1 ether);
-		Game memory newGame = Game(curID,msg.value,0,msg.sender,0,ActionChoices.None,ActionChoices.None);
+		require(msg.value == 1 ether);
+		Game memory newGame = Game(curID,1,0);
 		games[curID] = newGame;
+		wagers[msg.sender] = msg.value;
+		players[msg.sender] = curID;
 		curID+=1;
 		return true;
 	}
@@ -69,23 +69,34 @@ matchmaking is the hard part.
 	returns(bool success)
 	{
 		// check to see if these assignments persist
-		require(msg.value >= 1 ether);
+		require(msg.value == 1 ether);
 		Game storage desiredGame = games[id];
-		require(desiredGame.id != 0 && desiredGame.wager1 != 0 && desiredGame.player1 != 0 && desiredGame.player1 != msg.sender);
-		desiredGame.player2 = msg.sender;
-		desiredGame.wager2 = msg.value;
+		require(desiredGame.id != 0 && desiredGame.numPlayers == 1 && desiredGame.playersReady == 0);
+		desiredGame.numPlayers+=1;
+		players[msg.sender] = id;
+		wagers[msg.sender] = msg.value;
 		return true;
 	}
 
-	function sendChoice(uint id)
+	function sendChoice(ActionChoices choice)
 	public
 	onlyIfRunning
 	returns(bool success)
 	{
-		// require()
-		Game memory desiredGame = games[id];
+		uint id = players[msg.sender];
+		Game storage desiredGame = games[id];
+		require(desiredGame.id != 0 && desiredGame.numPlayers == 2);
+		require(players[msg.sender] == id);
+		require(wagers[msg.sender] >= 1 ether);
+		require(choices[msg.sender] == ActionChoices.None);
+		choices[msg.sender] = choice;
+		if(choice != ActionChoices.None){
+			desiredGame.playersReady+=1;
+		}
 		return true;
 	}
+
+	// function checkWinner()
 
 
 
