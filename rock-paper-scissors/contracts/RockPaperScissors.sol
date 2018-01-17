@@ -67,7 +67,7 @@ contract RockPaperScissors {
 		games[curID].exists = true;
 		games[curID].player1 = msg.sender;
 		games[curID].buyIn = msg.value;
-		ContractCreated(curID, msg.sender, msg.value);
+		GameCreated(curID, msg.sender, msg.value);
 		curID+=1;
 		return true;
 	}
@@ -79,7 +79,7 @@ contract RockPaperScissors {
 	returns(bool success)
 	{
 		// check to see if these assignments persist
-		require(game[id].exists == true);
+		require(games[id].exists == true);
 		require(games[id].buyIn == msg.value);
 		require(games[id].player1 != msg.sender);
 		games[id].player2 = msg.sender;
@@ -87,7 +87,7 @@ contract RockPaperScissors {
 		return true;
 	}
 
-	function check
+
 
 	// function sendChoice(ActionChoices choice)
 	// public
