@@ -31,12 +31,13 @@ contract RockPaperScissors {
 	  uint private curID;
 	  enum ActionChoices { None, Rock, Paper, Scissors }
 	  event IsContractStopped(bool paused);
-	  event ContractCreated(uint id, address creator, uint buyIn);
-	  mapping(address=>uint) private balance;
+	  event GameCreated(uint id, address creator, uint buyIn);
+	  event GameJoined(uint id, address player2);
 	  mapping(address=>ActionChoices) private choices;
 
 
 	  struct Game {
+	  	bool exists;
 	  	address player1;
 	  	address player2;
 	  	uint buyIn;
@@ -63,6 +64,7 @@ contract RockPaperScissors {
 	returns(bool success)
 	{
 		require(msg.value > 0);
+		games[curID].exists = true;
 		games[curID].player1 = msg.sender;
 		games[curID].buyIn = msg.value;
 		ContractCreated(curID, msg.sender, msg.value);
@@ -70,24 +72,22 @@ contract RockPaperScissors {
 		return true;
 	}
 
-	// function joinGame(uint id)
-	// public
-	// payable
-	// onlyIfRunning
-	// returns(bool success)
-	// {
-	// 	// check to see if these assignments persist
-	// 	require(msg.value == 1 ether);
-	// 	Game storage desiredGame = games[id];
-	// 	require(desiredGame.id != 0);
-	// 	require(desiredGame.numPlayers == 1);
-	// 	require(desiredGame.playersReady == 0);
-	// 	require(desiredGame.finished == false);
-	// 	desiredGame.numPlayers+=1;
-	// 	players[msg.sender] = id;
-	// 	balance[msg.sender] = msg.value;
-	// 	return true;
-	// }
+	function joinGame(uint id)
+	public
+	payable
+	onlyIfRunning
+	returns(bool success)
+	{
+		// check to see if these assignments persist
+		require(game[id].exists == true);
+		require(games[id].buyIn == msg.value);
+		require(games[id].player1 != msg.sender);
+		games[id].player2 = msg.sender;
+		GameJoined(id, msg.sender);
+		return true;
+	}
+
+	function check
 
 	// function sendChoice(ActionChoices choice)
 	// public
@@ -95,16 +95,16 @@ contract RockPaperScissors {
 	// returns(bool success)
 	// {
 	// 	uint id = players[msg.sender];
-	// 	Game storage desiredGame = games[id];
-	// 	require(desiredGame.id != 0);
-	// 	require(desiredGame.numPlayers == 2);
-	// 	require(desiredGame.finished == false);
+	// 	Game storage games[id] = games[id];
+	// 	require(games[id].id != 0);
+	// 	require(games[id].numPlayers == 2);
+	// 	require(games[id].finished == false);
 	// 	require(players[msg.sender] == id);
 	// 	require(balance[msg.sender] >= 1 ether);
 	// 	require(choices[msg.sender] == ActionChoices.None);
 	// 	choices[msg.sender] = choice;
 	// 	require(choice != ActionChoices.None);
-	// 	desiredGame.playersReady+=1;
+	// 	games[id].playersReady+=1;
 	// 	return true;
 	// }
 
@@ -115,8 +115,8 @@ contract RockPaperScissors {
 	// {
 	// 	uint id = players[msg.sender];
 	// 	require(id > 0);
-	// 	Game memory desiredGame = games[id];
-	// 	require(desiredGame.id != 0 && desiredGame.numPlayers == 2 && desiredGame.finished == false && desiredGame.playersReady == 2);
+	// 	Game memory games[id] = games[id];
+	// 	require(games[id].id != 0 && games[id].numPlayers == 2 && games[id].finished == false && games[id].playersReady == 2);
 
 	// }
 
