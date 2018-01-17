@@ -2,38 +2,46 @@ pragma solidity ^0.4.17;
 
 contract RockPaperScissors {
   /*
-  What do I need here?
+	Feedback
+	-add events to state changes
+	-one require statement per line for readability
+	-change sendChoice to take the id as well as the choice
+	-change from mappings to struct properites
 
-  address owner
-  Since there needs to be a balance for each player, let's actually use a map.
-  let's also do the paused thing, so that we can activate/disactivate the contract
-  function registerPlayer
+	problem: how to authenticate a player to a game
+	The game struct has references to both players, and if another address attempts to access it, it will be denied.
 
-  maybe we should look at it in the context of a game.
-  One player creates a game, and sends value,. The next player joins an open game, and sends value. 
+	problem: keeping track of balance for each game/
+	Solution, use variables in the game struct to keep track of wager. Use buyIn instead of 1 var for each player, since the wager must be equal on both sides. Then, send twice that amount when paying out the winnings
 
-matchmaking is the hard part. 
+	problem: keeping track of the games
+	Solution, map them to the id in mapping, don't think that id is actually a necessary property in the game struct, since that is the key to it in the mapping.
+
+	problem: Mappings vs Struct properties
+	Solution, less sstores to add them to struct, since the mappings require an SSTORE of the mapping as well as all of the stored values.
+
+	problem: reducing SSTORE transactions
+	These transactions occur whenever persistent storage is used. All of the instance variables represent SSTORES, and adding to a mapping is an SSTORE.
+	Since mappings in solidty are by default initialized for every possible key to value 0, you can set the games variables as if it already existed under that key in the mapping
 
 
-	1 = rock
-	2 = paper
-	3 = scissors
   */
 	  address private owner;
 	  bool private paused;
 	  uint private curID;
 	  enum ActionChoices { None, Rock, Paper, Scissors }
 	  event IsContractStopped(bool paused);
-	  mapping(address=>uint) private wagers;
-	  mapping(address=>uint) private players;
+	  event ContractCreated(uint id, address creator, uint buyIn);
+	  mapping(address=>uint) private balance;
 	  mapping(address=>ActionChoices) private choices;
 
 
 	  struct Game {
-	  	uint id;
-	  	uint numPlayers;
-	  	uint playersReady;
-	  	bool finished;
+	  	address player1;
+	  	address player2;
+	  	uint buyIn;
+	  	ActionChoices player1Choice;
+	  	ActionChoices player2Choice;
 	  }
 
   	mapping(uint=>Game) public games; 
@@ -54,60 +62,63 @@ matchmaking is the hard part.
 	onlyIfRunning
 	returns(bool success)
 	{
-		require(msg.value == 1 ether);
-		Game memory newGame = Game(curID,1,0,false);
-		games[curID] = newGame;
-		wagers[msg.sender] = msg.value;
-		players[msg.sender] = curID;
+		require(msg.value > 0);
+		games[curID].player1 = msg.sender;
+		games[curID].buyIn = msg.value;
+		ContractCreated(curID, msg.sender, msg.value);
 		curID+=1;
 		return true;
 	}
 
-	function joinGame(uint id)
-	public
-	payable
-	onlyIfRunning
-	returns(bool success)
-	{
-		// check to see if these assignments persist
-		require(msg.value == 1 ether);
-		Game storage desiredGame = games[id];
-		require(desiredGame.id != 0 && desiredGame.numPlayers == 1 && desiredGame.playersReady == 0 && desiredGame.finished == false);
-		desiredGame.numPlayers+=1;
-		players[msg.sender] = id;
-		wagers[msg.sender] = msg.value;
-		return true;
-	}
+	// function joinGame(uint id)
+	// public
+	// payable
+	// onlyIfRunning
+	// returns(bool success)
+	// {
+	// 	// check to see if these assignments persist
+	// 	require(msg.value == 1 ether);
+	// 	Game storage desiredGame = games[id];
+	// 	require(desiredGame.id != 0);
+	// 	require(desiredGame.numPlayers == 1);
+	// 	require(desiredGame.playersReady == 0);
+	// 	require(desiredGame.finished == false);
+	// 	desiredGame.numPlayers+=1;
+	// 	players[msg.sender] = id;
+	// 	balance[msg.sender] = msg.value;
+	// 	return true;
+	// }
 
-	function sendChoice(ActionChoices choice)
-	public
-	onlyIfRunning
-	returns(bool success)
-	{
-		uint id = players[msg.sender];
-		Game storage desiredGame = games[id];
-		require(desiredGame.id != 0 && desiredGame.numPlayers == 2 && desiredGame.finished == false);
-		require(players[msg.sender] == id);
-		require(wagers[msg.sender] >= 1 ether);
-		require(choices[msg.sender] == ActionChoices.None);
-		choices[msg.sender] = choice;
-		if(choice != ActionChoices.None){
-			desiredGame.playersReady+=1;
-		}
-		return true;
-	}
+	// function sendChoice(ActionChoices choice)
+	// public
+	// onlyIfRunning
+	// returns(bool success)
+	// {
+	// 	uint id = players[msg.sender];
+	// 	Game storage desiredGame = games[id];
+	// 	require(desiredGame.id != 0);
+	// 	require(desiredGame.numPlayers == 2);
+	// 	require(desiredGame.finished == false);
+	// 	require(players[msg.sender] == id);
+	// 	require(balance[msg.sender] >= 1 ether);
+	// 	require(choices[msg.sender] == ActionChoices.None);
+	// 	choices[msg.sender] = choice;
+	// 	require(choice != ActionChoices.None);
+	// 	desiredGame.playersReady+=1;
+	// 	return true;
+	// }
 
-	function declareWinner()
-	public
-	onlyIfRunning
-	returns(address winner)
-	{
-		uint id = players[msg.sender];
-		require(id > 0);
-		Game memory desiredGame = games[id];
-		require(desiredGame.id != 0 && desiredGame.numPlayers == 2 && desiredGame.finished == false && desiredGame.playersReady == 2);
+	// function declareWinner()
+	// public
+	// onlyIfRunning
+	// returns(address winner)
+	// {
+	// 	uint id = players[msg.sender];
+	// 	require(id > 0);
+	// 	Game memory desiredGame = games[id];
+	// 	require(desiredGame.id != 0 && desiredGame.numPlayers == 2 && desiredGame.finished == false && desiredGame.playersReady == 2);
 
-	}
+	// }
 
 
 
